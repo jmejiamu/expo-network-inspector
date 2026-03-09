@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["ExpoNetworkInspectorModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.networkinspector.ExpoNetworkInspectorModule"]
+  }
+}

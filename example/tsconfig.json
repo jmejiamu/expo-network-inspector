@@ -1,0 +1,10 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "expo-network-inspector": ["../src/index"],
+      "expo-network-inspector/*": ["../src/*"]
+    }
+  }
+}
