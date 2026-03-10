@@ -76,26 +76,30 @@ export default function App() {
 
       <Text style={{ marginBottom: 16 }}>{message}</Text>
 
-      <FlatList
-        data={entries}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={{ paddingVertical: 12, borderBottomWidth: 1 }}>
-            <Text>
-              {item.method} {item.url}
-            </Text>
-            <Text>Status: {item.statusCode}</Text>
-            <Text>Duration: {item.durationMs}ms</Text>
-            <Text>Protocol: {item.protocol}</Text>
-            <Text>Error: {item.error || "none"}</Text>
-            <Text>
-              Warnings:{" "}
-              {item.warnings.length ? item.warnings.join(", ") : "none"}
-            </Text>
-            <Text>Headers: {JSON.stringify(item.requestHeaders, null, 2)}</Text>
-          </View>
-        )}
-      />
+      {entries.length > 0 && (
+        <FlatList
+          data={entries}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={{ paddingVertical: 12, borderBottomWidth: 1 }}>
+              <Text>
+                {item.method} {item.url}
+              </Text>
+              <Text>Status: {item.statusCode}</Text>
+              <Text>Duration: {item.durationMs}ms</Text>
+              <Text>Protocol: {item.protocol}</Text>
+              <Text>Error: {item.error || "none"}</Text>
+              <Text>
+                Warnings:{" "}
+                {item.warnings.length ? item.warnings.join(", ") : "none"}
+              </Text>
+              <Text>
+                Headers: {JSON.stringify(item.requestHeaders, null, 2)}
+              </Text>
+            </View>
+          )}
+        />
+      )}
     </SafeAreaView>
   );
 }

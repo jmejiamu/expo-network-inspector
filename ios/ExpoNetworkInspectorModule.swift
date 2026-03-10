@@ -1,48 +1,53 @@
 import ExpoModulesCore
+import Foundation
 
 public class ExpoNetworkInspectorModule: Module {
-  // Each module class must implement the definition function. The definition consists of components
-  // that describes the module's functionality and behavior.
-  // See https://docs.expo.dev/modules/module-api for more details about available components.
   public func definition() -> ModuleDefinition {
-    // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
-    // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
-    // The module will be accessible from `requireNativeModule('ExpoNetworkInspector')` in JavaScript.
     Name("ExpoNetworkInspector")
 
-    // Defines constant property on the module.
-    Constant("PI") {
-      Double.pi
+    Function("start") { () -> String in
+      NetworkInspectorStore.shared.isStarted = true
+      URLProtocol.registerClass(NetworkInspectorURLProtocol.self)
+      return "start"
     }
 
-    // Defines event names that the module can send to JavaScript.
-    Events("onChange")
-
-    // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("hello") {
-      return "Hello world! 👋"
+    Function("stop") { () -> String in
+      NetworkInspectorStore.shared.isStarted = false
+      URLProtocol.unregisterClass(NetworkInspectorURLProtocol.self)
+      return "stop"
     }
 
-    // Defines a JavaScript function that always returns a Promise and whose native code
-    // is by default dispatched on the different thread than the JavaScript runtime runs on.
-    AsyncFunction("setValueAsync") { (value: String) in
-      // Send an event to JavaScript.
-      self.sendEvent("onChange", [
-        "value": value
-      ])
+    Function("clear") { () -> String in
+      NetworkInspectorStore.shared.clear()
+      return "clear"
     }
 
-    // Enables the module to be used as a native view. Definition components that are accepted as part of the
-    // view definition: Prop, Events.
-    View(ExpoNetworkInspectorView.self) {
-      // Defines a setter for the `url` prop.
-      Prop("url") { (view: ExpoNetworkInspectorView, url: URL) in
-        if view.webView.url != url {
-          view.webView.load(URLRequest(url: url))
-        }
+    Function("getEntries") { () -> [[String: Any]] in
+      return NetworkInspectorStore.shared.entries
+    }
+
+    AsyncFunction("makeRequest") { (urlString: String) async -> String in
+      guard NetworkInspectorStore.shared.isStarted else {
+        return "inspector_not_started"
       }
 
-      Events("onLoad")
+      guard let url = URL(string: urlString) else {
+        return "invalid_url"
+      }
+
+      var request = URLRequest(url: url)
+      request.httpMethod = "GET"
+      request.setValue("Bearer super-secret-token", forHTTPHeaderField: "Authorization")
+      request.setValue("hello-from-ios-module", forHTTPHeaderField: "X-Demo")
+      request.setValue("sessionid=abc123", forHTTPHeaderField: "Cookie")
+
+      do {
+        let (_, response) = try await URLSession.shared.data(for: request)
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        return "request_logged_\(statusCode)"
+      } catch {
+        return "request_failed"
+      }
     }
   }
 }
