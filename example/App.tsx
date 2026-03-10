@@ -1,73 +1,101 @@
-import { useEvent } from 'expo';
-import ExpoNetworkInspector, { ExpoNetworkInspectorView } from 'expo-network-inspector';
-import { Button, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import React, { useEffect, useState } from "react";
+import { Button, FlatList, SafeAreaView, Text, View } from "react-native";
+import NetworkInspector, { NetworkEntry } from "expo-network-inspector";
 
 export default function App() {
-  const onChangePayload = useEvent(ExpoNetworkInspector, 'onChange');
+  const [message, setMessage] = useState("Nothing yet");
+  const [entries, setEntries] = useState<NetworkEntry[]>([]);
+
+  useEffect(() => {
+    const sub = NetworkInspector.addListener("onRequest", (entry) => {
+      setEntries((prev) => [entry, ...prev]);
+      setMessage(`Live request: ${entry.method} ${entry.url}`);
+    });
+
+    return () => {
+      sub.remove();
+    };
+  }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.container}>
-        <Text style={styles.header}>Module API Example</Text>
-        <Group name="Constants">
-          <Text>{ExpoNetworkInspector.PI}</Text>
-        </Group>
-        <Group name="Functions">
-          <Text>{ExpoNetworkInspector.hello()}</Text>
-        </Group>
-        <Group name="Async functions">
-          <Button
-            title="Set value"
-            onPress={async () => {
-              await ExpoNetworkInspector.setValueAsync('Hello from JS!');
-            }}
-          />
-        </Group>
-        <Group name="Events">
-          <Text>{onChangePayload?.value}</Text>
-        </Group>
-        <Group name="Views">
-          <ExpoNetworkInspectorView
-            url="https://www.example.com"
-            onLoad={({ nativeEvent: { url } }) => console.log(`Loaded: ${url}`)}
-            style={styles.view}
-          />
-        </Group>
-      </ScrollView>
+    <SafeAreaView style={{ flex: 1, padding: 24, marginTop: 60 }}>
+      <Button
+        title="Start"
+        onPress={() => {
+          const result = NetworkInspector.start();
+          setMessage(result);
+        }}
+      />
+
+      <View style={{ height: 12 }} />
+
+      <Button
+        title="Make HTTPS Request"
+        onPress={async () => {
+          const result = await NetworkInspector.makeRequest(
+            "https://jsonplaceholder.typicode.com/posts/1",
+          );
+          setMessage(result);
+        }}
+      />
+
+      <View style={{ height: 12 }} />
+
+      <Button
+        title="Make HTTP Request"
+        onPress={async () => {
+          const result =
+            await NetworkInspector.makeRequest("http://example.com");
+          setMessage(result);
+        }}
+      />
+
+      <View style={{ height: 12 }} />
+
+      <Button
+        title="Load Existing Entries"
+        onPress={() => {
+          const result = NetworkInspector.getEntries();
+          setEntries(result);
+          setMessage("Loaded entries");
+        }}
+      />
+
+      <View style={{ height: 12 }} />
+
+      <Button
+        title="Clear"
+        onPress={() => {
+          NetworkInspector.clear();
+          setEntries([]);
+          setMessage("clear");
+        }}
+      />
+
+      <View style={{ height: 20 }} />
+
+      <Text style={{ marginBottom: 16 }}>{message}</Text>
+
+      <FlatList
+        data={entries}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={{ paddingVertical: 12, borderBottomWidth: 1 }}>
+            <Text>
+              {item.method} {item.url}
+            </Text>
+            <Text>Status: {item.statusCode}</Text>
+            <Text>Duration: {item.durationMs}ms</Text>
+            <Text>Protocol: {item.protocol}</Text>
+            <Text>Error: {item.error || "none"}</Text>
+            <Text>
+              Warnings:{" "}
+              {item.warnings.length ? item.warnings.join(", ") : "none"}
+            </Text>
+            <Text>Headers: {JSON.stringify(item.requestHeaders, null, 2)}</Text>
+          </View>
+        )}
+      />
     </SafeAreaView>
   );
 }
-
-function Group(props: { name: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.group}>
-      <Text style={styles.groupHeader}>{props.name}</Text>
-      {props.children}
-    </View>
-  );
-}
-
-const styles = {
-  header: {
-    fontSize: 30,
-    margin: 20,
-  },
-  groupHeader: {
-    fontSize: 20,
-    marginBottom: 20,
-  },
-  group: {
-    margin: 20,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#eee',
-  },
-  view: {
-    flex: 1,
-    height: 200,
-  },
-};

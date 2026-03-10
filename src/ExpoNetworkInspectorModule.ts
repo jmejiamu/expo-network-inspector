@@ -1,12 +1,17 @@
-import { NativeModule, requireNativeModule } from 'expo';
+import { NativeModule, requireNativeModule } from "expo";
+import type {
+  ExpoNetworkInspectorEvents,
+  NetworkEntry,
+} from "./ExpoNetworkInspector.types";
 
-import { ExpoNetworkInspectorModuleEvents } from './ExpoNetworkInspector.types';
-
-declare class ExpoNetworkInspectorModule extends NativeModule<ExpoNetworkInspectorModuleEvents> {
-  PI: number;
-  hello(): string;
-  setValueAsync(value: string): Promise<void>;
+declare class ExpoNetworkInspectorModule extends NativeModule<ExpoNetworkInspectorEvents> {
+  start(): string;
+  stop(): string;
+  clear(): string;
+  getEntries(): NetworkEntry[];
+  makeRequest(url: string): Promise<string>;
 }
 
-// This call loads the native module object from the JSI.
-export default requireNativeModule<ExpoNetworkInspectorModule>('ExpoNetworkInspector');
+export default requireNativeModule<ExpoNetworkInspectorModule>(
+  "ExpoNetworkInspector",
+);
